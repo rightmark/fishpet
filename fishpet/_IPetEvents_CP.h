@@ -5,7 +5,7 @@ class CProxy_IPetEvents
     : public IConnectionPointImpl<T, &__uuidof(_IPetEvents)>
 {
 public:
-    HRESULT Fire_OnInit(ULONG cx, ULONG cy)
+    HRESULT Fire_OnInit(LONG x1, LONG y1, LONG x2, LONG y2)
     {
         HRESULT hr = S_OK;
         T* pT = static_cast<T*>(this);
@@ -21,12 +21,14 @@ public:
 
             if (pConnection)
             {
-                CComVariant var[2];
-                var[1] = cx;
-                var[0] = cy;
+                CComVariant var[4];
+                var[3] = x1;
+                var[2] = y1;
+                var[1] = x2;
+                var[0] = y2;
                 CComVariant varResult;
 
-                DISPPARAMS params = { var, NULL, 2, 0 };
+                DISPPARAMS params = { var, NULL, 4, 0 };
                 hr = pConnection->Invoke(1, IID_NULL, LOCALE_USER_DEFAULT, DISPATCH_METHOD, &params, &varResult, NULL, NULL);
             }
         }

@@ -65,13 +65,11 @@
       <DllDataFileName />
       <InterfaceIdentifierFileName>fishpet_i.c</InterfaceIdentifierFileName>
       <ProxyFileName>fishpet_p.c</ProxyFileName>
-      <ValidateAllParameters>false</ValidateAllParameters>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -163,6 +161,7 @@
     <ResourceCompile Include="fishpet.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include=".editorconfig" />
     <None Include="fishpet.rgs" />
     <None Include="Pet.rgs" />
   </ItemGroup>

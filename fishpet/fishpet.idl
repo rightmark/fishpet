@@ -70,8 +70,8 @@ library FishPetLib
     {
         properties:
         methods:
-            [id(1), helpstring("fired on initialize. cx - screen width, cy - screen height")]
-            HRESULT OnInit([in] ULONG cx, [in] ULONG cy);
+            [id(1), helpstring("fired on initialize. (x1, y1, x2, y2) - virtual screen rectangle")]
+            HRESULT OnInit([in] LONG x1, [in] LONG y1, [in] LONG x2, [in] LONG y2);
             [id(2), helpstring("fired on termination")]
             HRESULT OnShut([in] SHORT reason);
             [id(3), helpstring("fired on timeout. tick - current counter value")]

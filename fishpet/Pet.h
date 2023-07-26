@@ -108,7 +108,7 @@ public:
         m_mousetrack = false;
         m_screensave = false;
 
-        Initialize();
+        //Initialize();
 
         DWORD style = WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP;
         DWORD exstyle = WS_EX_TOPMOST | WS_EX_LAYERED;
@@ -198,7 +198,7 @@ public:
         // adjust pet window size
         UpdateWindowSize();
 
-        OnInit(m_screen.cx, m_screen.cy);
+        OnInit(m_screen);
 
         m_initialize = true;
 
@@ -233,12 +233,12 @@ public:
     }
     STDMETHOD(get_AreaCX)(ULONG* cx)
     {
-        *cx = m_screen.cx;
+        *cx = m_screen.Width();
         return S_OK;
     }
     STDMETHOD(get_AreaCY)(ULONG* cy)
     {
-        *cy = m_screen.cy;
+        *cy = m_screen.Height();
         return S_OK;
     }
     STDMETHOD(get_Length)(ULONG* cx)
@@ -329,9 +329,9 @@ public:
     }
 
     // _IPetEvents Methods
-    STDMETHOD(OnInit)(ULONG cx, ULONG cy)
+    STDMETHOD(OnInit)(CRect& rc)
     {
-        return Fire_OnInit(cx, cy);
+        return Fire_OnInit(rc.left, rc.top, rc.right, rc.bottom);
     }
     STDMETHOD(OnShut)(SHORT reason)
     {
@@ -522,7 +522,10 @@ private:
 
         m_ptDrag.SetPoint(0, 0);
         m_petdim.SetSize(0, 0);
-        m_screen.SetSize(::GetSystemMetrics(SM_CXSCREEN), ::GetSystemMetrics(SM_CYSCREEN));
+
+        CPoint origin(::GetSystemMetrics(SM_XVIRTUALSCREEN), ::GetSystemMetrics(SM_YVIRTUALSCREEN));
+        CSize size(::GetSystemMetrics(SM_CXVIRTUALSCREEN), ::GetSystemMetrics(SM_CYVIRTUALSCREEN));
+        m_screen = CRect(origin, size);
 
         m_strFile.Empty();
         m_shots.RemoveAll();
@@ -568,7 +571,7 @@ private:
 
         m_petdim.SetSize(m_pet->GetWidth() / m_framenum, m_pet->GetHeight());
         m_petpos.X = (REAL)-m_petdim.cx;
-        m_petpos.Y = (REAL)m_screen.cy / 2;
+        m_petpos.Y = (REAL)m_screen.Width() / 2;
 
         return true;
     }
@@ -752,7 +755,7 @@ private:
 
     CPoint m_ptDrag;
     CSize  m_petdim;            // pet frame dimensions
-    CSize  m_screen;            // screen work area
+    CRect  m_screen;            // screen work area
 
     PointF m_petpos;            // pet frame origin (upper-left)
     CImage m_pet;
