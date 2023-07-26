@@ -1,0 +1,24 @@
+HKCR
+{
+	WScript.FishPet.1 = s 'FishPet Class'
+	{
+		CLSID = s '{D5D7099F-7B97-4D6F-B7E4-BBA65EAFA03F}'
+	}
+	WScript.FishPet = s 'FishPet Class'
+	{
+		CLSID = s '{D5D7099F-7B97-4D6F-B7E4-BBA65EAFA03F}'
+		CurVer = s 'WScript.FishPet.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {D5D7099F-7B97-4D6F-B7E4-BBA65EAFA03F} = s 'FishPet Class'
+		{
+			ProgID = s 'WScript.FishPet.1'
+			VersionIndependentProgID = s 'WScript.FishPet'
+			ForceRemove 'Programmable'
+			LocalServer32 = s '%MODULE%'
+			val AppID = s '%APPID%'
+			'TypeLib' = s '{0B9C8597-2899-42A4-A3E0-A6404519CC10}'
+		}
+	}
+}

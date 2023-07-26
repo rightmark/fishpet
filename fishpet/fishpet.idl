@@ -1,0 +1,105 @@
+// fishpet.idl : IDL source for fishpet
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (fishpet.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+    object,
+    uuid(01C79D97-EAC7-4C89-AE38-F22F5AFE779D),
+    dual,
+    nonextensible,
+    oleautomation,
+    helpstring("IPet Interface"),
+    pointer_default(unique)
+]
+interface IPet : IDispatch
+{
+    [id(1), helpstring("initialize scene objects. file - pet image animation frames in ARGB format, fnum - number of frames")]
+    HRESULT Init([in, optional] VARIANT file, [in, optional] VARIANT fnum);
+    [id(2), helpstring("terminate service")]
+    HRESULT Shut(void);
+    [id(3), helpstring("set shot marks")]
+    HRESULT Shoot([in] LONG x, [in] LONG y);
+    [id(4), helpstring("pet image frame origin")]
+    HRESULT SetPos([in] FLOAT x, [in] FLOAT y);
+    [propget, id(5), helpstring("screen width")]
+    HRESULT AreaCX([out, retval] ULONG* pVal);
+    [propget, id(6), helpstring("screen height")]
+    HRESULT AreaCY([out, retval] ULONG* pVal);
+    [propget, id(7), helpstring("pet image width")]
+    HRESULT Length([out, retval] ULONG* pVal);
+    [propget, id(8), helpstring("pet image height")]
+    HRESULT Height([out, retval] ULONG* pVal);
+    [propget, id(9), helpstring("common pet damage")]
+    HRESULT Damage([out, retval] ULONG* pVal);
+    [propput, id(10), helpstring("pet image transparency. 0 - transparent, 255 - opaque")]
+    HRESULT Alpha([in] SHORT newVal);
+    [propput, id(11), helpstring("pet image horizontal flip")]
+    HRESULT FlipX([in] VARIANT_BOOL newVal);
+    [propput, id(12), helpstring("pet image vertical flip")]
+    HRESULT FlipY([in] VARIANT_BOOL newVal);
+    [propput, id(13), helpstring("show shot marks")]
+    HRESULT Wound([in] VARIANT_BOOL newVal);
+    [propput, id(14), helpstring("send pet's message text")]
+    HRESULT Message([in] BSTR newVal);
+    [propput, id(15), helpstring("set animation frame timeout")]
+    HRESULT Timeout([in] ULONG newVal);
+    [propput, id(16), helpstring("hunting mode support")]
+    HRESULT Huntmode([in] VARIANT_BOOL newVal);
+    [propput, id(17), helpstring("messaging mode support")]
+    HRESULT Textmode([in] VARIANT_BOOL newVal);
+};
+
+[
+    uuid(0B9C8597-2899-42A4-A3E0-A6404519CC10),
+    version(1.0),
+    helpstring("FishPet 1.0 Type Library")
+]
+library FishPetLib
+{
+    importlib("stdole2.tlb");
+    [
+        uuid(71A1948B-4594-4E96-9B25-E2CE88EDDDFE),
+        helpstring("_IPetEvents Interface")
+    ]
+    dispinterface _IPetEvents
+    {
+        properties:
+        methods:
+            [id(1), helpstring("fired on initialize. cx - screen width, cy - screen height")]
+            HRESULT OnInit([in] ULONG cx, [in] ULONG cy);
+            [id(2), helpstring("fired on termination")]
+            HRESULT OnShut([in] SHORT reason);
+            [id(3), helpstring("fired on timeout. tick - current counter value")]
+            HRESULT OnTime([in] ULONG tick);
+            [id(4), helpstring("fired on left button click. x, y - position in client window. key pressed")]
+            HRESULT OnClick([in] LONG x, [in] LONG y, [in] USHORT key);
+            [id(5), helpstring("fired on button doubleclick.")]
+            HRESULT OnDoubleClick([in] LONG x, [in] LONG y, [in] USHORT key);
+            [id(6), helpstring("fired on rigth button click")]
+            HRESULT OnRightClick([in] LONG x, [in] LONG y, [in] USHORT key);
+            [id(7), helpstring("fired on dragging mode enter")]
+            HRESULT OnDragEnter(void);
+            [id(8), helpstring("fired on dragging mode leave. x, y - pet image frame new origin")]
+            HRESULT OnDragLeave([in] FLOAT x, [in] FLOAT y);
+            [id(9), helpstring("fired when cursor hovers over client window")]
+            HRESULT OnHover([in] LONG x, [in] LONG y, [in] SHORT key);
+            [id(10), helpstring("fired when cursor leaves client window")]
+            HRESULT OnLeave(void);
+            [id(11), helpstring("fired on Screen saver action")]
+            HRESULT OnScreenSave([in] VARIANT_BOOL active);
+    };
+    [
+        uuid(D5D7099F-7B97-4D6F-B7E4-BBA65EAFA03F),
+        helpstring("FishPet Class")
+    ]
+    coclass Pet
+    {
+        [default] interface IPet;
+        [default, source] dispinterface _IPetEvents;
+    };
+};

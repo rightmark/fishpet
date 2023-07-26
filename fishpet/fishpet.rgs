@@ -1,0 +1,11 @@
+HKCR
+{
+	NoRemove AppID
+	{
+		'%APPID%' = s 'fishpet'
+		'fishpet.exe'
+		{
+			val AppID = s '%APPID%'
+		}
+	}
+}
