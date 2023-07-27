@@ -286,13 +286,13 @@ public:
         m_showshot = (val != VARIANT_FALSE);
         return S_OK;
     }
-    STDMETHOD(Message)(BSTR msg, VARIANT align)
+    STDMETHOD(Message)(BSTR msg, BYTE align)
     {
         if (!PlaySound(msg))
         {
             m_strText = msg;
             m_msgalpha = 255;
-            m_msgalign = (VT_UI1 == align.vt) ? align.bVal : V_CENTER;
+            m_msgalign = align;
         }
 
         return S_OK;
@@ -653,9 +653,6 @@ private:
         ::UpdateLayeredWindow(m_hWnd, windc, &pos, &m_petdim, memdc, &pt, 0, &bf, ULW_ALPHA);
 
         memdc.SelectBitmap(hbm);
-
-        // @TODO: km 20090125 - consider..
-        //DrawText(windc, m_petdim.cx/3 + 20, m_petdim.cy/3);
     }
     void FramePixel(int x, int y, COLORREF& c, BYTE& a)
     {
@@ -705,7 +702,7 @@ private:
 
         } // for(i)
     }
-    void DrawText(HDC hdc, int x, int y)
+    void DrawText(HDC hdc, LONG x, LONG y)
     {
         if (!m_textmode || m_strText.IsEmpty()) return;
 
@@ -716,16 +713,17 @@ private:
         }
         else if (m_msgalign == V_TOP)
         {
-            y = 5;
+            y = 0;
         }
         else if (m_msgalign == V_BOTTOM)
         {
-            y = m_petdim.cy - 5;
+            y = m_petdim.cy - 15;
         }
+        // @TODO: km 20230727 - if top/bottom then draw on white matte.
 
         Gdiplus::Graphics g(hdc);
         Gdiplus::FontFamily ff(_T("Arial"));
-        Gdiplus::Font font(&ff, 10, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+        Gdiplus::Font font(&ff, 10, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);// @TODO: km 20230727 - try unit point
         Gdiplus::PointF pt((REAL)x, (REAL)y);
         Gdiplus::SolidBrush brush(Gdiplus::Color(m_msgalpha, 0, 64, 0));
         g.DrawString(m_strText, -1, &font, pt, &brush);

@@ -27,7 +27,7 @@ interface IPet : IDispatch
     [id(4), helpstring("pet image frame origin")]
     HRESULT SetPos([in] FLOAT x, [in] FLOAT y);
     [id(5), helpstring("send pet's message text and vertical alignment")]
-    HRESULT Message([in] BSTR msg, [in, optional] VARIANT align);
+    HRESULT Message([in] BSTR msg, [in, defaultvalue(0)] BYTE align);
     [propget, id(6), helpstring("screen width")]
     HRESULT AreaCX([out, retval] ULONG* pVal);
     [propget, id(7), helpstring("screen height")]

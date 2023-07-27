@@ -110,7 +110,7 @@ EXTERN_C const IID IID_IPet;
         
         virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE Message( 
             /* [in] */ BSTR msg,
-            /* [optional][in] */ VARIANT align) = 0;
+            /* [defaultvalue][in] */ BYTE align = 0) = 0;
         
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_AreaCX( 
             /* [retval][out] */ ULONG *pVal) = 0;
@@ -227,7 +227,7 @@ EXTERN_C const IID IID_IPet;
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE *Message )( 
             IPet * This,
             /* [in] */ BSTR msg,
-            /* [optional][in] */ VARIANT align);
+            /* [defaultvalue][in] */ BYTE align);
         
         /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_AreaCX )( 
             IPet * This,
