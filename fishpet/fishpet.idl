@@ -26,26 +26,26 @@ interface IPet : IDispatch
     HRESULT Shoot([in] LONG x, [in] LONG y);
     [id(4), helpstring("pet image frame origin")]
     HRESULT SetPos([in] FLOAT x, [in] FLOAT y);
-    [propget, id(5), helpstring("screen width")]
+    [id(5), helpstring("send pet's message text and vertical alignment")]
+    HRESULT Message([in] BSTR msg, [in, optional] VARIANT align);
+    [propget, id(6), helpstring("screen width")]
     HRESULT AreaCX([out, retval] ULONG* pVal);
-    [propget, id(6), helpstring("screen height")]
+    [propget, id(7), helpstring("screen height")]
     HRESULT AreaCY([out, retval] ULONG* pVal);
-    [propget, id(7), helpstring("pet image width")]
+    [propget, id(8), helpstring("pet image width")]
     HRESULT Length([out, retval] ULONG* pVal);
-    [propget, id(8), helpstring("pet image height")]
+    [propget, id(9), helpstring("pet image height")]
     HRESULT Height([out, retval] ULONG* pVal);
-    [propget, id(9), helpstring("common pet damage")]
+    [propget, id(10), helpstring("common pet damage")]
     HRESULT Damage([out, retval] ULONG* pVal);
-    [propput, id(10), helpstring("pet image transparency. 0 - transparent, 255 - opaque")]
+    [propput, id(11), helpstring("pet image transparency. 0 - transparent, 255 - opaque")]
     HRESULT Alpha([in] SHORT newVal);
-    [propput, id(11), helpstring("pet image horizontal flip")]
+    [propput, id(12), helpstring("pet image horizontal flip")]
     HRESULT FlipX([in] VARIANT_BOOL newVal);
-    [propput, id(12), helpstring("pet image vertical flip")]
+    [propput, id(13), helpstring("pet image vertical flip")]
     HRESULT FlipY([in] VARIANT_BOOL newVal);
-    [propput, id(13), helpstring("show shot marks")]
+    [propput, id(14), helpstring("show shot marks")]
     HRESULT Wound([in] VARIANT_BOOL newVal);
-    [propput, id(14), helpstring("send pet's message text")]
-    HRESULT Message([in] BSTR newVal);
     [propput, id(15), helpstring("set animation frame timeout")]
     HRESULT Timeout([in] ULONG newVal);
     [propput, id(16), helpstring("hunting mode support")]

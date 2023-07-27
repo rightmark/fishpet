@@ -60,6 +60,9 @@ class ATL_NO_VTABLE CPet
         bool  flip;
     } SHOT, * LPSHOT;
 
+    enum { V_CENTER = 0, V_TOP, V_BOTTOM };
+
+    static const UINT DFLT_FRAMENUM = 20;
     static const UINT DRAG_EPSILON = 15;
     static const UINT TIMER_ELAPSE = 50; // ms
 
@@ -156,9 +159,9 @@ public:
                     // adjust pet window position
                     UpdateWindowPos();
                 }
+                DrawFrame();
 
                 if (++m_framecnt >= m_framenum) m_framecnt = 0;
-                DrawFrame();
             }
             ::Sleep(1);
         }
@@ -283,12 +286,13 @@ public:
         m_showshot = (val != VARIANT_FALSE);
         return S_OK;
     }
-    STDMETHOD(put_Message)(BSTR msg)
+    STDMETHOD(Message)(BSTR msg, VARIANT align)
     {
         if (!PlaySound(msg))
         {
             m_strText = msg;
             m_msgalpha = 255;
+            m_msgalign = (VT_UI1 == align.vt) ? align.bVal : V_CENTER;
         }
 
         return S_OK;
@@ -512,10 +516,11 @@ private:
         m_dragging = false;
 
         m_interval = TIMER_ELAPSE;
-        m_framenum = 20;
+        m_framenum = DFLT_FRAMENUM;
         m_framecnt = 0;
-        m_msgalpha = 255;   // opaque
         m_petalpha = 255;
+        m_msgalpha = 255;   // opaque
+        m_msgalign = V_CENTER;
 
         m_petpos.X = 0.0f;
         m_petpos.Y = 0.0f;
@@ -560,7 +565,7 @@ private:
             ATLTRACE(_T("CPet::SetPetImage() - from resource\n"));
 
             // correct value for default image
-            m_framenum = 20;
+            m_framenum = DFLT_FRAMENUM;
         }
 
         if (!m_pet) return false;
@@ -704,8 +709,19 @@ private:
     {
         if (!m_textmode || m_strText.IsEmpty()) return;
 
-        if (m_moveback) x -= 20;
-        if (m_deadfish) y += 5;
+        if (m_msgalign == V_CENTER)
+        {
+            if (m_moveback) x -= 20;
+            if (m_deadfish) y += 5;
+        }
+        else if (m_msgalign == V_TOP)
+        {
+            y = 5;
+        }
+        else if (m_msgalign == V_BOTTOM)
+        {
+            y = m_petdim.cy - 5;
+        }
 
         Gdiplus::Graphics g(hdc);
         Gdiplus::FontFamily ff(_T("Arial"));
@@ -762,6 +778,7 @@ private:
 
     BYTE m_petalpha;            // alpha transparency. 0 - image is transparent. 
     BYTE m_msgalpha;
+    BYTE m_msgalign;            // 0 - center (default), 1 - top, 2 - bottom.
 
     CStringW m_strText;         // pet' message text
     CStringW m_strFile;         // pet image file

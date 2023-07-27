@@ -108,6 +108,10 @@ EXTERN_C const IID IID_IPet;
             /* [in] */ FLOAT x,
             /* [in] */ FLOAT y) = 0;
         
+        virtual /* [helpstring][id] */ HRESULT STDMETHODCALLTYPE Message( 
+            /* [in] */ BSTR msg,
+            /* [optional][in] */ VARIANT align) = 0;
+        
         virtual /* [helpstring][id][propget] */ HRESULT STDMETHODCALLTYPE get_AreaCX( 
             /* [retval][out] */ ULONG *pVal) = 0;
         
@@ -134,9 +138,6 @@ EXTERN_C const IID IID_IPet;
         
         virtual /* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE put_Wound( 
             /* [in] */ VARIANT_BOOL newVal) = 0;
-        
-        virtual /* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE put_Message( 
-            /* [in] */ BSTR newVal) = 0;
         
         virtual /* [helpstring][id][propput] */ HRESULT STDMETHODCALLTYPE put_Timeout( 
             /* [in] */ ULONG newVal) = 0;
@@ -223,6 +224,11 @@ EXTERN_C const IID IID_IPet;
             /* [in] */ FLOAT x,
             /* [in] */ FLOAT y);
         
+        /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE *Message )( 
+            IPet * This,
+            /* [in] */ BSTR msg,
+            /* [optional][in] */ VARIANT align);
+        
         /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_AreaCX )( 
             IPet * This,
             /* [retval][out] */ ULONG *pVal);
@@ -258,10 +264,6 @@ EXTERN_C const IID IID_IPet;
         /* [helpstring][id][propput] */ HRESULT ( STDMETHODCALLTYPE *put_Wound )( 
             IPet * This,
             /* [in] */ VARIANT_BOOL newVal);
-        
-        /* [helpstring][id][propput] */ HRESULT ( STDMETHODCALLTYPE *put_Message )( 
-            IPet * This,
-            /* [in] */ BSTR newVal);
         
         /* [helpstring][id][propput] */ HRESULT ( STDMETHODCALLTYPE *put_Timeout )( 
             IPet * This,
@@ -323,6 +325,9 @@ EXTERN_C const IID IID_IPet;
 #define IPet_SetPos(This,x,y)	\
     ( (This)->lpVtbl -> SetPos(This,x,y) ) 
 
+#define IPet_Message(This,msg,align)	\
+    ( (This)->lpVtbl -> Message(This,msg,align) ) 
+
 #define IPet_get_AreaCX(This,pVal)	\
     ( (This)->lpVtbl -> get_AreaCX(This,pVal) ) 
 
@@ -349,9 +354,6 @@ EXTERN_C const IID IID_IPet;
 
 #define IPet_put_Wound(This,newVal)	\
     ( (This)->lpVtbl -> put_Wound(This,newVal) ) 
-
-#define IPet_put_Message(This,newVal)	\
-    ( (This)->lpVtbl -> put_Message(This,newVal) ) 
 
 #define IPet_put_Timeout(This,newVal)	\
     ( (This)->lpVtbl -> put_Timeout(This,newVal) ) 
