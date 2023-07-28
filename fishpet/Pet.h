@@ -140,8 +140,9 @@ public:
         if (IsScreenSaverStateChanged())
         {
             OnScreenSave(m_screensave);
-            _Module.Log(_T("Screen saver - %i"), (int)m_screensave);
-            if (m_screensave) return TRUE;
+            _Module.Log(_T("CPet::screen saver - %i"), (int)m_screensave);
+            ::Sleep(1);
+            if (m_screensave) return FALSE;
         }
 
         if (m_initialize)
