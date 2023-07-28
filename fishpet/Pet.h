@@ -140,6 +140,7 @@ public:
         if (IsScreenSaverStateChanged())
         {
             OnScreenSave(m_screensave);
+            _Module.Log(_T("Screen saver - %i"), (int)m_screensave);
             if (m_screensave) return TRUE;
         }
 
