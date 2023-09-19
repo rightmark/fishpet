@@ -3,11 +3,11 @@
 /* this ALWAYS GENERATED file contains the definitions for the interfaces */
 
 
- /* File created by MIDL compiler version 8.01.0622 */
+ /* File created by MIDL compiler version 8.01.0626 */
 /* at Tue Jan 19 06:14:07 2038
  */
 /* Compiler settings for fishpet.idl:
-    Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.01.0622 
+    Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.01.0626 
     protocol : dce , ms_ext, c_ext, robust
     error checks: allocation ref bounds_check enum stub_data 
     VC __declspec() decoration level: 
@@ -40,6 +40,14 @@
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1020)
 #pragma once
+#endif
+
+#ifndef DECLSPEC_XFGVIRT
+#if _CONTROL_FLOW_GUARD_XFG
+#define DECLSPEC_XFGVIRT(base, func) __declspec(xfg_virtual(base, func))
+#else
+#define DECLSPEC_XFGVIRT(base, func)
+#endif
 #endif
 
 /* Forward Declarations */ 
@@ -157,28 +165,34 @@ EXTERN_C const IID IID_IPet;
     {
         BEGIN_INTERFACE
         
+        DECLSPEC_XFGVIRT(IUnknown, QueryInterface)
         HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
             IPet * This,
             /* [in] */ REFIID riid,
             /* [annotation][iid_is][out] */ 
             _COM_Outptr_  void **ppvObject);
         
+        DECLSPEC_XFGVIRT(IUnknown, AddRef)
         ULONG ( STDMETHODCALLTYPE *AddRef )( 
             IPet * This);
         
+        DECLSPEC_XFGVIRT(IUnknown, Release)
         ULONG ( STDMETHODCALLTYPE *Release )( 
             IPet * This);
         
+        DECLSPEC_XFGVIRT(IDispatch, GetTypeInfoCount)
         HRESULT ( STDMETHODCALLTYPE *GetTypeInfoCount )( 
             IPet * This,
             /* [out] */ UINT *pctinfo);
         
+        DECLSPEC_XFGVIRT(IDispatch, GetTypeInfo)
         HRESULT ( STDMETHODCALLTYPE *GetTypeInfo )( 
             IPet * This,
             /* [in] */ UINT iTInfo,
             /* [in] */ LCID lcid,
             /* [out] */ ITypeInfo **ppTInfo);
         
+        DECLSPEC_XFGVIRT(IDispatch, GetIDsOfNames)
         HRESULT ( STDMETHODCALLTYPE *GetIDsOfNames )( 
             IPet * This,
             /* [in] */ REFIID riid,
@@ -187,6 +201,7 @@ EXTERN_C const IID IID_IPet;
             /* [in] */ LCID lcid,
             /* [size_is][out] */ DISPID *rgDispId);
         
+        DECLSPEC_XFGVIRT(IDispatch, Invoke)
         /* [local] */ HRESULT ( STDMETHODCALLTYPE *Invoke )( 
             IPet * This,
             /* [annotation][in] */ 
@@ -206,73 +221,90 @@ EXTERN_C const IID IID_IPet;
             /* [annotation][out] */ 
             _Out_opt_  UINT *puArgErr);
         
+        DECLSPEC_XFGVIRT(IPet, Init)
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE *Init )( 
             IPet * This,
             /* [optional][in] */ VARIANT file,
             /* [optional][in] */ VARIANT fnum);
         
+        DECLSPEC_XFGVIRT(IPet, Shut)
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE *Shut )( 
             IPet * This);
         
+        DECLSPEC_XFGVIRT(IPet, Shoot)
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE *Shoot )( 
             IPet * This,
             /* [in] */ LONG x,
             /* [in] */ LONG y);
         
+        DECLSPEC_XFGVIRT(IPet, SetPos)
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE *SetPos )( 
             IPet * This,
             /* [in] */ FLOAT x,
             /* [in] */ FLOAT y);
         
+        DECLSPEC_XFGVIRT(IPet, Message)
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE *Message )( 
             IPet * This,
             /* [in] */ BSTR msg,
             /* [defaultvalue][in] */ BYTE align);
         
+        DECLSPEC_XFGVIRT(IPet, get_AreaCX)
         /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_AreaCX )( 
             IPet * This,
             /* [retval][out] */ ULONG *pVal);
         
+        DECLSPEC_XFGVIRT(IPet, get_AreaCY)
         /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_AreaCY )( 
             IPet * This,
             /* [retval][out] */ ULONG *pVal);
         
+        DECLSPEC_XFGVIRT(IPet, get_Length)
         /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_Length )( 
             IPet * This,
             /* [retval][out] */ ULONG *pVal);
         
+        DECLSPEC_XFGVIRT(IPet, get_Height)
         /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_Height )( 
             IPet * This,
             /* [retval][out] */ ULONG *pVal);
         
+        DECLSPEC_XFGVIRT(IPet, get_Damage)
         /* [helpstring][id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_Damage )( 
             IPet * This,
             /* [retval][out] */ ULONG *pVal);
         
+        DECLSPEC_XFGVIRT(IPet, put_Alpha)
         /* [helpstring][id][propput] */ HRESULT ( STDMETHODCALLTYPE *put_Alpha )( 
             IPet * This,
             /* [in] */ SHORT newVal);
         
+        DECLSPEC_XFGVIRT(IPet, put_FlipX)
         /* [helpstring][id][propput] */ HRESULT ( STDMETHODCALLTYPE *put_FlipX )( 
             IPet * This,
             /* [in] */ VARIANT_BOOL newVal);
         
+        DECLSPEC_XFGVIRT(IPet, put_FlipY)
         /* [helpstring][id][propput] */ HRESULT ( STDMETHODCALLTYPE *put_FlipY )( 
             IPet * This,
             /* [in] */ VARIANT_BOOL newVal);
         
+        DECLSPEC_XFGVIRT(IPet, put_Wound)
         /* [helpstring][id][propput] */ HRESULT ( STDMETHODCALLTYPE *put_Wound )( 
             IPet * This,
             /* [in] */ VARIANT_BOOL newVal);
         
+        DECLSPEC_XFGVIRT(IPet, put_Timeout)
         /* [helpstring][id][propput] */ HRESULT ( STDMETHODCALLTYPE *put_Timeout )( 
             IPet * This,
             /* [in] */ ULONG newVal);
         
+        DECLSPEC_XFGVIRT(IPet, put_Huntmode)
         /* [helpstring][id][propput] */ HRESULT ( STDMETHODCALLTYPE *put_Huntmode )( 
             IPet * This,
             /* [in] */ VARIANT_BOOL newVal);
         
+        DECLSPEC_XFGVIRT(IPet, put_Textmode)
         /* [helpstring][id][propput] */ HRESULT ( STDMETHODCALLTYPE *put_Textmode )( 
             IPet * This,
             /* [in] */ VARIANT_BOOL newVal);
@@ -407,28 +439,34 @@ EXTERN_C const IID DIID__IPetEvents;
     {
         BEGIN_INTERFACE
         
+        DECLSPEC_XFGVIRT(IUnknown, QueryInterface)
         HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
             _IPetEvents * This,
             /* [in] */ REFIID riid,
             /* [annotation][iid_is][out] */ 
             _COM_Outptr_  void **ppvObject);
         
+        DECLSPEC_XFGVIRT(IUnknown, AddRef)
         ULONG ( STDMETHODCALLTYPE *AddRef )( 
             _IPetEvents * This);
         
+        DECLSPEC_XFGVIRT(IUnknown, Release)
         ULONG ( STDMETHODCALLTYPE *Release )( 
             _IPetEvents * This);
         
+        DECLSPEC_XFGVIRT(IDispatch, GetTypeInfoCount)
         HRESULT ( STDMETHODCALLTYPE *GetTypeInfoCount )( 
             _IPetEvents * This,
             /* [out] */ UINT *pctinfo);
         
+        DECLSPEC_XFGVIRT(IDispatch, GetTypeInfo)
         HRESULT ( STDMETHODCALLTYPE *GetTypeInfo )( 
             _IPetEvents * This,
             /* [in] */ UINT iTInfo,
             /* [in] */ LCID lcid,
             /* [out] */ ITypeInfo **ppTInfo);
         
+        DECLSPEC_XFGVIRT(IDispatch, GetIDsOfNames)
         HRESULT ( STDMETHODCALLTYPE *GetIDsOfNames )( 
             _IPetEvents * This,
             /* [in] */ REFIID riid,
@@ -437,6 +475,7 @@ EXTERN_C const IID DIID__IPetEvents;
             /* [in] */ LCID lcid,
             /* [size_is][out] */ DISPID *rgDispId);
         
+        DECLSPEC_XFGVIRT(IDispatch, Invoke)
         /* [local] */ HRESULT ( STDMETHODCALLTYPE *Invoke )( 
             _IPetEvents * This,
             /* [annotation][in] */ 

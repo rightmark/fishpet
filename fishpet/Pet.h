@@ -530,8 +530,8 @@ private:
         m_ptDrag.SetPoint(0, 0);
         m_petdim.SetSize(0, 0);
 
-        CPoint origin(::GetSystemMetrics(SM_XVIRTUALSCREEN), ::GetSystemMetrics(SM_YVIRTUALSCREEN));
-        CSize size(::GetSystemMetrics(SM_CXVIRTUALSCREEN), ::GetSystemMetrics(SM_CYVIRTUALSCREEN));
+        CPoint origin(::GetSystemMetrics(SM_XVIRTUALSCREEN), ::GetSystemMetrics(SM_YVIRTUALSCREEN)); // left/top of the virtual screen
+        CSize size(::GetSystemMetrics(SM_CXVIRTUALSCREEN), ::GetSystemMetrics(SM_CYVIRTUALSCREEN)); // width/height of the virtual screen
         m_screen = CRect(origin, size);
 
         m_strFile.Empty();
