@@ -50,7 +50,7 @@ class ATL_NO_VTABLE CPet
     typedef CFrameWindowImpl<CPet, ATL::CWindow, CPetWinTraits> baseClass;
 
     typedef Gdiplus::REAL REAL;
-    typedef Gdiplus::PointF PointF;
+    //typedef Gdiplus::PointF PointF; // @TODO: km 20230921 - remove
     typedef CGdiplusImage CImage;
 
     typedef struct tagSHOT
@@ -60,7 +60,7 @@ class ATL_NO_VTABLE CPet
         bool  flip;
     } SHOT, * LPSHOT;
 
-    enum { V_CENTER = 0, V_TOP, V_BOTTOM };
+    enum VAlign { V_CENTER = 0, V_TOP, V_BOTTOM };
 
     static const UINT DFLT_FRAMENUM = 20;
     static const UINT DRAG_EPSILON = 15;
@@ -108,7 +108,7 @@ public:
         _Module.Log(_T("CPet object created (%p)"), this);
 
         m_initialize = false;
-        m_mousetrack = false;
+        m_mousehover = false;
         m_screensave = false;
 
         //Initialize();
@@ -163,11 +163,21 @@ public:
                 }
                 DrawFrame();
 
-                if (++m_framecnt >= m_framenum) m_framecnt = 0;
+                if (++m_curframe >= m_framenum) m_curframe = 0;
             }
             ::Sleep(1);
         }
         return TRUE;
+    }
+    BOOL CheckHit(CPoint& pt)
+    {
+        bool inside = CRect(m_petpos, m_petdim).PtInRect(pt);
+        if (m_mousehover != inside)
+        {
+            m_mousehover = inside;
+            PostMessage(inside ? WM_MOUSEHOVER : WM_MOUSELEAVE);
+        }
+        return inside;
     }
 
 public:
@@ -231,8 +241,8 @@ public:
     }
     STDMETHOD(SetPos)(FLOAT x, FLOAT y)
     {
-        m_petpos.X = x;
-        m_petpos.Y = y;
+        m_petpos.x = (LONG)x;
+        m_petpos.y = (LONG)y;
 
         return S_OK;
     }
@@ -390,6 +400,7 @@ public:
         ATLASSERT(pl != NULL);
         pl->AddIdleHandler(this);
 
+        _Module.AddPetObject(this);
         _Module.Log(_T("create : %p"), m_hWnd);
         return 0;
     }
@@ -407,6 +418,7 @@ public:
         // this is important when multiple objects created..
         ModifyStyle(0, WS_POPUP);
 
+        _Module.RemovePetObject(this);
         _Module.Log(_T("delete : %p, lock=%d"), m_hWnd, _Module.m_nLockCnt);
         bHandled = FALSE;
         return 1;
@@ -438,7 +450,7 @@ public:
             m_dragging = false;
             ATLTRACE(_T("CPet::OnMouseMove() - leave dragging mode\n"));
 
-            OnDragLeave(m_petpos.X, m_petpos.Y);
+            OnDragLeave((FLOAT)m_petpos.x, (FLOAT)m_petpos.y);
         }
         return 0;
     }
@@ -450,17 +462,6 @@ public:
     }
     LRESULT OnMouseMove(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/)
     {
-        if (!m_mousetrack)
-        {
-            TRACKMOUSEEVENT tme;
-            tme.cbSize = sizeof(TRACKMOUSEEVENT);
-            tme.dwFlags = TME_HOVER | TME_LEAVE;
-            tme.hwndTrack = m_hWnd;
-            tme.dwHoverTime = HOVER_DEFAULT;
-
-            if (::TrackMouseEvent(&tme)) { m_mousetrack = true; }
-        }
-
         if (m_btnpress)
         {
             int dx = GET_X_LPARAM(lParam) - m_ptDrag.x;
@@ -480,8 +481,8 @@ public:
 
             if (m_dragging)
             {
-                m_petpos.X += dx;
-                m_petpos.Y += dy;
+                m_petpos.x += dx;
+                m_petpos.y += dy;
 
                 // adjust pet window position
                 UpdateWindowPos();
@@ -497,8 +498,6 @@ public:
     }
     LRESULT OnMouseLeave(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
     {
-        m_mousetrack = false; // wait for the next WM_MOUSEMOVE
-
         OnLeave();
 
         return 0;
@@ -519,16 +518,14 @@ private:
 
         m_interval = TIMER_ELAPSE;
         m_framenum = DFLT_FRAMENUM;
-        m_framecnt = 0;
+        m_curframe = 0;
         m_petalpha = 255;
         m_msgalpha = 255;   // opaque
         m_msgalign = V_CENTER;
 
-        m_petpos.X = 0.0f;
-        m_petpos.Y = 0.0f;
-
-        m_ptDrag.SetPoint(0, 0);
         m_petdim.SetSize(0, 0);
+        m_petpos.SetPoint(0, 0);
+        m_ptDrag.SetPoint(0, 0);
 
         CPoint origin(::GetSystemMetrics(SM_XVIRTUALSCREEN), ::GetSystemMetrics(SM_YVIRTUALSCREEN)); // left/top of the virtual screen
         CSize size(::GetSystemMetrics(SM_CXVIRTUALSCREEN), ::GetSystemMetrics(SM_CYVIRTUALSCREEN)); // width/height of the virtual screen
@@ -554,7 +551,7 @@ private:
         {
             CErrorMode em(SEM_NOOPENFILEERRORBOX | SEM_FAILCRITICALERRORS);
             // read image from file..
-            bLoaded = m_pet.Load(m_strFile);
+            bLoaded = m_petpix.Load(m_strFile);
 #ifdef _DEBUG
             if (bLoaded)
                 ATLTRACE(_T("CPet::SetPetImage() - from file\n"));
@@ -563,22 +560,22 @@ private:
 
         if (!bLoaded)
         {
-            if (!m_pet.Load(IDR_MAINFRAME, NULL)) return false;
+            if (!m_petpix.Load(IDR_MAINFRAME, NULL)) return false;
             ATLTRACE(_T("CPet::SetPetImage() - from resource\n"));
 
             // correct value for default image
             m_framenum = DFLT_FRAMENUM;
         }
 
-        if (!m_pet) return false;
+        if (!m_petpix) return false;
 
-        Gdiplus::PixelFormat pf = m_pet->GetPixelFormat();
+        Gdiplus::PixelFormat pf = m_petpix->GetPixelFormat();
         if (!Gdiplus::IsAlphaPixelFormat(pf) || !Gdiplus::IsCanonicalPixelFormat(pf))
             return false;
 
-        m_petdim.SetSize(m_pet->GetWidth() / m_framenum, m_pet->GetHeight());
-        m_petpos.X = (REAL)-m_petdim.cx;
-        m_petpos.Y = (REAL)m_screen.Width() / 2;
+        m_petdim.SetSize(m_petpix->GetWidth() / m_framenum, m_petpix->GetHeight());
+        m_petpos.x = -m_petdim.cx;
+        m_petpos.y = m_screen.Width() / 2;
 
         return true;
     }
@@ -627,11 +624,10 @@ private:
     }
     void DrawFrame()
     {
-        CGdiplusBitmap bmp(m_petdim.cx, m_petdim.cy, m_pet->GetPixelFormat());
+        CGdiplusBitmap bmp(m_petdim.cx, m_petdim.cy, m_petpix->GetPixelFormat());
         Gdiplus::Graphics g((Gdiplus::Image*)bmp);
-        g.DrawImage(m_pet, Gdiplus::Rect(0, 0, m_petdim.cx, m_petdim.cy)
-            , m_petdim.cx * m_framecnt, 0, m_petdim.cx, m_petdim.cy, Gdiplus::UnitPixel
-        );
+        Gdiplus::Rect dstRect(0, 0, m_petdim.cx, m_petdim.cy);
+        g.DrawImage(m_petpix, dstRect, m_petdim.cx * m_curframe, 0, m_petdim.cx, m_petdim.cy, Gdiplus::UnitPixel);
 
         if (m_moveback) bmp->RotateFlip(Gdiplus::RotateNoneFlipX);
         if (m_deadfish) bmp->RotateFlip(Gdiplus::RotateNoneFlipY);
@@ -651,17 +647,16 @@ private:
         bf.SourceConstantAlpha = m_petalpha;
 
         CPoint pt(0, 0);
-        CPoint pos((int)m_petpos.X, (int)m_petpos.Y);
-        ::UpdateLayeredWindow(m_hWnd, windc, &pos, &m_petdim, memdc, &pt, 0, &bf, ULW_ALPHA);
+        ::UpdateLayeredWindow(m_hWnd, windc, &m_petpos, &m_petdim, memdc, &pt, 0, &bf, ULW_ALPHA);
 
         memdc.SelectBitmap(hbm);
     }
     void FramePixel(int x, int y, COLORREF& c, BYTE& a)
     {
-        CGdiplusBitmap bmp(m_petdim.cx, m_petdim.cy, m_pet->GetPixelFormat());
+        CGdiplusBitmap bmp(m_petdim.cx, m_petdim.cy, m_petpix->GetPixelFormat());
         Gdiplus::Graphics g((Gdiplus::Image*)bmp);
-        g.DrawImage(m_pet, Gdiplus::Rect(0, 0, m_petdim.cx, m_petdim.cy)
-            , m_petdim.cx * m_framecnt, 0, m_petdim.cx, m_petdim.cy, Gdiplus::UnitPixel
+        g.DrawImage(m_petpix, Gdiplus::Rect(0, 0, m_petdim.cx, m_petdim.cy)
+            , m_petdim.cx * m_curframe, 0, m_petdim.cx, m_petdim.cy, Gdiplus::UnitPixel
         );
 
         if (m_moveback) bmp->RotateFlip(Gdiplus::RotateNoneFlipX);
@@ -734,11 +729,11 @@ private:
     }
     void UpdateWindowPos()
     {
-        SetWindowPos(HWND_TOPMOST, (int)m_petpos.X, (int)m_petpos.Y, 0, 0, SWP_NOSIZE);
+        SetWindowPos(HWND_TOPMOST, m_petpos.x, m_petpos.y, 0, 0, SWP_NOSIZE);
     }
     void UpdateWindowSize()
     {
-        SetWindowPos(NULL, (int)m_petpos.X, (int)m_petpos.Y, m_petdim.cx, m_petdim.cy, SWP_NOZORDER);
+        SetWindowPos(NULL, m_petpos.x, m_petpos.y, m_petdim.cx, m_petdim.cy, SWP_NOZORDER);
     }
 
     HCURSOR SetCursor(LPCTSTR cursor)
@@ -752,11 +747,11 @@ public:
 
 private:
     // internal
+    bool m_initialize;
+    bool m_mousehover;          // cursor is over pet
+    bool m_screensave;
     bool m_btnpress;            // left button down
     bool m_dragging;            // dragging mode
-    bool m_initialize;
-    bool m_mousetrack;
-    bool m_screensave;
 
     // props
     bool m_huntmode;
@@ -767,14 +762,14 @@ private:
 
     UINT m_interval;            // interval between frame updates
     UINT m_framenum;            // total number of frames
-    UINT m_framecnt;            // current frame selected
+    UINT m_curframe;            // current frame selected
 
     CPoint m_ptDrag;
     CSize  m_petdim;            // pet frame dimensions
     CRect  m_screen;            // screen work area
 
-    PointF m_petpos;            // pet frame origin (upper-left)
-    CImage m_pet;
+    CPoint m_petpos;            // pet frame origin (left-top)
+    CImage m_petpix;
 
     BYTE m_petalpha;            // alpha transparency. 0 - image is transparent. 
     BYTE m_msgalpha;

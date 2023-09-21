@@ -53,6 +53,7 @@
 #include <atlapp.h>
 
 #include <atlctl.h>
+#include <atlcoll.h>
 #include <atlframe.h>
 #include <atltypes.h>
 #pragma warning(pop)
