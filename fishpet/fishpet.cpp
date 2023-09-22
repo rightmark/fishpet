@@ -195,7 +195,7 @@ HRESULT CExeModule::Run(int nShowCmd)
 
 BOOL CExeModule::DoMouseTracking()
 {
-    CPoint pt; ::GetCursorPos(&pt);
+    POINT pt; ::GetCursorPos(&pt);
     POSITION pos = m_pets.GetHeadPosition();
     while (pos)
     {
@@ -206,23 +206,9 @@ BOOL CExeModule::DoMouseTracking()
 
 LRESULT CExeModule::LowLevelMouse(int nCode, WPARAM wParam, LPARAM lParam)
 {
-    if (nCode == HC_ACTION)
+    if (nCode == HC_ACTION && wParam == WM_MOUSEMOVE)
     {
-        switch (wParam)
-        {
-        case WM_MOUSEMOVE:
-            DoMouseTracking();
-            break;
-        case WM_LBUTTONDOWN:
-        {
-            auto p = (LPMSLLHOOKSTRUCT)lParam;
-            ATLTRACE2(atlTraceUtil, 0, _T("mouse pos: %d, %d\n"), p->pt.x, p->pt.y);
-            break;
-        }
-        default:
-            ATLTRACE2(atlTraceUtil, 0, _T("mouse wParam: 0x%04X\n"), wParam);
-            break;
-        }
+        DoMouseTracking();
     }
     return ::CallNextHookEx(NULL, nCode, wParam, lParam);
 

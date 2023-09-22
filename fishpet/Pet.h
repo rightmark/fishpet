@@ -169,13 +169,12 @@ public:
         }
         return TRUE;
     }
-    BOOL CheckHit(CPoint& pt)
+    BOOL CheckHit(POINT& pt)
     {
         bool inside = CRect(m_petpos, m_petdim).PtInRect(pt);
         if (m_mousehover != inside)
         {
-            m_mousehover = inside;
-            PostMessage(inside ? WM_MOUSEHOVER : WM_MOUSELEAVE);
+            (m_mousehover = inside) ? PostMessage(WM_MOUSEHOVER, 0, MAKELPARAM(pt.x, pt.y)) : PostMessage(WM_MOUSELEAVE);
         }
         return inside;
     }
@@ -312,7 +311,7 @@ public:
     STDMETHOD(put_Timeout)(ULONG val)
     {
         m_interval = (val > USER_TIMER_MAXIMUM) ? USER_TIMER_MAXIMUM
-            : (val < USER_TIMER_MINIMUM) ? USER_TIMER_MINIMUM : val;
+                   : (val < USER_TIMER_MINIMUM) ? USER_TIMER_MINIMUM : val;
 
         return S_OK;
     }
@@ -328,8 +327,8 @@ public:
         else
         {
             SetCursor(IDC_ARROW);
-            // now the shape of the layered window will be ignored and the mouse
-            // events will be passed to other windows underneath the layered window.
+            // now the shape of the layered window will be ignored and the mouse events
+            // will be passed to other windows underneath the layered window.
             ModifyStyleEx(0, WS_EX_TRANSPARENT);
 
             m_shots.RemoveAll(); // remove shots history
@@ -440,17 +439,17 @@ public:
     {
         m_btnpress = false;
 
-        if (!m_dragging)
-        {
-            OnClick(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), (USHORT)wParam);
-        }
-        else
+        if (m_dragging)
         {
             ReleaseCapture();
             m_dragging = false;
             ATLTRACE(_T("CPet::OnMouseMove() - leave dragging mode\n"));
 
             OnDragLeave((FLOAT)m_petpos.x, (FLOAT)m_petpos.y);
+        }
+        else
+        {
+            OnClick(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), (USHORT)wParam);
         }
         return 0;
     }
