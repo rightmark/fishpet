@@ -50,7 +50,7 @@ class ATL_NO_VTABLE CPet
     typedef CFrameWindowImpl<CPet, ATL::CWindow, CPetWinTraits> baseClass;
 
     typedef Gdiplus::REAL REAL;
-    //typedef Gdiplus::PointF PointF; // @TODO: km 20230921 - remove
+    typedef Gdiplus::PointF PointF;
     typedef CGdiplusImage CImage;
 
     typedef struct tagSHOT
@@ -58,13 +58,14 @@ class ATL_NO_VTABLE CPet
         POINT pt;
         BYTE  alfa;
         bool  flip;
-    } SHOT, * LPSHOT;
+    } SHOT, *LPSHOT;
 
     enum VAlign { V_CENTER = 0, V_TOP, V_BOTTOM };
 
-    static const UINT DFLT_FRAMENUM = 20;
+    static const UINT DEFLT_FRAMES = 20;
     static const UINT DRAG_EPSILON = 15;
     static const UINT TIMER_ELAPSE = 50; // ms
+    static const UINT SCREEN_SAVER = 1000; // ms
 
 public:
     DECLARE_FRAME_WND_CLASS_EX(_T("fishpet_class"), IDR_MAINFRAME, CS_DBLCLKS, COLOR_WINDOW)
@@ -135,14 +136,40 @@ public:
         _Module.Log(_T("CPet object released (%p)"), this);
     }
 
-    BOOL OnIdle() override
+    virtual BOOL OnIdle()
     {
-        if (IsScreenSaverStateChanged())
+        if (m_screensave)
         {
-            OnScreenSave(m_screensave);
-            _Module.Log(_T("CPet::screen saver - %i"), (int)m_screensave);
-            ::Sleep(1);
-            if (m_screensave) return FALSE;
+            ::Sleep(SCREEN_SAVER);
+
+            if (!IsScreenSaverActive())
+            {
+                //_Module.Log(_T("** Screen saver stopped"));
+                m_screensave = false;
+                OnScreenSave(m_screensave);
+            }
+            return TRUE;
+        }
+        else
+        {
+            static UINT uptick = 0;
+
+            UINT tick = ::GetTickCount();
+
+            if ((UINT)(tick - uptick) > SCREEN_SAVER)
+            {
+                uptick = tick;
+
+                if (IsScreenSaverActive())
+                {
+                    //_Module.Log(_T("** Screen saver started"));
+                    m_screensave = true;
+                    OnScreenSave(m_screensave);
+                    DrawFrame(); 
+
+                    return TRUE;
+                }
+            }
         }
 
         if (m_initialize)
@@ -171,16 +198,17 @@ public:
     }
     BOOL CheckHit(POINT& pt)
     {
-        bool inside = CRect(m_petpos, m_petdim).PtInRect(pt);
+        bool inside = CRect(CPoint((int)m_petpos.X, (int)m_petpos.Y), m_petdim).PtInRect(pt);
         if (m_mousehover != inside)
         {
-            (m_mousehover = inside) ? PostMessage(WM_MOUSEHOVER, 0, MAKELPARAM(pt.x, pt.y)) : PostMessage(WM_MOUSELEAVE);
+            m_mousehover = inside;
+            inside ? PostMessage(WM_MOUSEHOVER, 0, MAKELPARAM(pt.x, pt.y)) : PostMessage(WM_MOUSELEAVE);
         }
         return inside;
     }
 
 public:
-    // ISupportsErrorInfo
+// ISupportsErrorInfo
     STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid)
     {
         static const IID* arr[] = { &IID_IPet };
@@ -193,7 +221,7 @@ public:
         return S_FALSE;
     }
 
-    // IPet
+// IPet
     STDMETHOD(Init)(VARIANT file, VARIANT fnum)
     {
         Initialize();
@@ -240,8 +268,8 @@ public:
     }
     STDMETHOD(SetPos)(FLOAT x, FLOAT y)
     {
-        m_petpos.x = (LONG)x;
-        m_petpos.y = (LONG)y;
+        m_petpos.X = x;
+        m_petpos.Y = y;
 
         return S_OK;
     }
@@ -270,15 +298,15 @@ public:
         *pVal = 0;
         for (int i = m_shots.GetSize(); i--;)
         {
-            *pVal += m_shots[i].alfa;
+            *pVal += m_shots[i].alfa;// @TODO: km 20230922 - what does it mean?
         }
 
         return S_OK;
     }
     STDMETHOD(put_Alpha)(SHORT a)
     {
-        m_petalpha = (a > 0xff) ? 255
-            : (a < 0x00) ? 0 : (BYTE)a;
+        m_petalpha = (a > 0xff)? 255 
+                   : (a < 0x00)? 0 : (BYTE)a;
 
         return S_OK;
     }
@@ -310,8 +338,8 @@ public:
     }
     STDMETHOD(put_Timeout)(ULONG val)
     {
-        m_interval = (val > USER_TIMER_MAXIMUM) ? USER_TIMER_MAXIMUM
-                   : (val < USER_TIMER_MINIMUM) ? USER_TIMER_MINIMUM : val;
+        m_interval = (val > USER_TIMER_MAXIMUM)? USER_TIMER_MAXIMUM
+                   : (val < USER_TIMER_MINIMUM)? USER_TIMER_MINIMUM : val;
 
         return S_OK;
     }
@@ -343,7 +371,7 @@ public:
         return S_OK;
     }
 
-    // _IPetEvents Methods
+// _IPetEvents Methods
     STDMETHOD(OnInit)(CRect& rc)
     {
         return Fire_OnInit(rc.left, rc.top, rc.right, rc.bottom);
@@ -389,7 +417,7 @@ public:
         return Fire_OnScreenSave(active);
     }
 
-    // Message handlers
+// Message handlers
     LRESULT OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
     {
         ModifyStyle(WS_POPUP, 0);
@@ -445,7 +473,7 @@ public:
             m_dragging = false;
             ATLTRACE(_T("CPet::OnMouseMove() - leave dragging mode\n"));
 
-            OnDragLeave((FLOAT)m_petpos.x, (FLOAT)m_petpos.y);
+            OnDragLeave(m_petpos.X, m_petpos.Y);
         }
         else
         {
@@ -461,6 +489,19 @@ public:
     }
     LRESULT OnMouseMove(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/)
     {
+/*
+        if (!m_mousehover)
+        {
+            TRACKMOUSEEVENT tme;
+            tme.cbSize = sizeof(TRACKMOUSEEVENT);
+            tme.dwFlags = TME_HOVER | TME_LEAVE;
+            tme.hwndTrack = m_hWnd;
+            tme.dwHoverTime = HOVER_DEFAULT;
+
+            if (::TrackMouseEvent(&tme)) { m_mousehover = true; }
+        }
+*/
+
         if (m_btnpress)
         {
             int dx = GET_X_LPARAM(lParam) - m_ptDrag.x;
@@ -480,8 +521,8 @@ public:
 
             if (m_dragging)
             {
-                m_petpos.x += dx;
-                m_petpos.y += dy;
+                m_petpos.X += dx;
+                m_petpos.Y += dy;
 
                 // adjust pet window position
                 UpdateWindowPos();
@@ -497,10 +538,13 @@ public:
     }
     LRESULT OnMouseLeave(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
     {
+        //m_mousehover = false; // wait for the next WM_MOUSEMOVE
+
         OnLeave();
 
         return 0;
     }
+
 
 private:
     // helper methods
@@ -516,15 +560,17 @@ private:
         m_dragging = false;
 
         m_interval = TIMER_ELAPSE;
-        m_framenum = DFLT_FRAMENUM;
+        m_framenum = DEFLT_FRAMES;
         m_curframe = 0;
         m_petalpha = 255;
         m_msgalpha = 255;   // opaque
         m_msgalign = V_CENTER;
 
         m_petdim.SetSize(0, 0);
-        m_petpos.SetPoint(0, 0);
         m_ptDrag.SetPoint(0, 0);
+
+        m_petpos.X = 0.0f;
+        m_petpos.Y = 0.0f;
 
         CPoint origin(::GetSystemMetrics(SM_XVIRTUALSCREEN), ::GetSystemMetrics(SM_YVIRTUALSCREEN)); // left/top of the virtual screen
         CSize size(::GetSystemMetrics(SM_CXVIRTUALSCREEN), ::GetSystemMetrics(SM_CYVIRTUALSCREEN)); // width/height of the virtual screen
@@ -563,7 +609,7 @@ private:
             ATLTRACE(_T("CPet::SetPetImage() - from resource\n"));
 
             // correct value for default image
-            m_framenum = DFLT_FRAMENUM;
+            m_framenum = DEFLT_FRAMES;
         }
 
         if (!m_petpix) return false;
@@ -573,8 +619,8 @@ private:
             return false;
 
         m_petdim.SetSize(m_petpix->GetWidth() / m_framenum, m_petpix->GetHeight());
-        m_petpos.x = -m_petdim.cx;
-        m_petpos.y = m_screen.Width() / 2;
+        m_petpos.X = (REAL)-m_petdim.cx;
+        m_petpos.Y = (REAL) m_screen.Width() / 2;
 
         return true;
     }
@@ -638,25 +684,28 @@ private:
         HBITMAP hbm = memdc.SelectBitmap(bm);
 
         DrawShot(memdc);
-        DrawText(memdc, m_petdim.cx / 3 + 20, m_petdim.cy / 3);
+        DrawText(memdc, m_petdim.cx/3 + 20, m_petdim.cy/3);
 
-        BLENDFUNCTION bf = { 0 };
+        BLENDFUNCTION bf = {0};
         bf.BlendOp = AC_SRC_OVER;
         bf.AlphaFormat = AC_SRC_ALPHA;
         bf.SourceConstantAlpha = m_petalpha;
 
         CPoint pt(0, 0);
-        ::UpdateLayeredWindow(m_hWnd, windc, &m_petpos, &m_petdim, memdc, &pt, 0, &bf, ULW_ALPHA);
+        CPoint pos((int)m_petpos.X, (int)m_petpos.Y);
+        ::UpdateLayeredWindow(m_hWnd, windc, &pos, &m_petdim, memdc, &pt, 0, &bf, ULW_ALPHA);
 
         memdc.SelectBitmap(hbm);
+
+        // @TODO: km 20090125 - consider..
+        //DrawText(windc, m_petdim.cx/3 + 20, m_petdim.cy/3);
     }
     void FramePixel(int x, int y, COLORREF& c, BYTE& a)
     {
         CGdiplusBitmap bmp(m_petdim.cx, m_petdim.cy, m_petpix->GetPixelFormat());
         Gdiplus::Graphics g((Gdiplus::Image*)bmp);
-        g.DrawImage(m_petpix, Gdiplus::Rect(0, 0, m_petdim.cx, m_petdim.cy)
-            , m_petdim.cx * m_curframe, 0, m_petdim.cx, m_petdim.cy, Gdiplus::UnitPixel
-        );
+        Gdiplus::Rect dstRect(0, 0, m_petdim.cx, m_petdim.cy);
+        g.DrawImage(m_petpix, dstRect, m_petdim.cx * m_curframe, 0, m_petdim.cx, m_petdim.cy, Gdiplus::UnitPixel);
 
         if (m_moveback) bmp->RotateFlip(Gdiplus::RotateNoneFlipX);
         if (m_deadfish) bmp->RotateFlip(Gdiplus::RotateNoneFlipY);
@@ -719,26 +768,26 @@ private:
 
         Gdiplus::Graphics g(hdc);
         Gdiplus::FontFamily ff(_T("Arial"));
-        Gdiplus::Font font(&ff, 10, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);// @TODO: km 20230727 - try unit point
+        Gdiplus::Font font(&ff, 10, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
         Gdiplus::PointF pt((REAL)x, (REAL)y);
         Gdiplus::SolidBrush brush(Gdiplus::Color(m_msgalpha, 0, 64, 0));
         g.DrawString(m_strText, -1, &font, pt, &brush);
 
         if (!m_msgalpha--) m_strText.Empty();
     }
-    void UpdateWindowPos()
+    void UpdateWindowPos(void)
     {
-        SetWindowPos(HWND_TOPMOST, m_petpos.x, m_petpos.y, 0, 0, SWP_NOSIZE);
+        SetWindowPos(HWND_TOPMOST, (int)m_petpos.X, (int)m_petpos.Y, 0, 0, SWP_NOSIZE);
     }
-    void UpdateWindowSize()
+    void UpdateWindowSize(void)
     {
-        SetWindowPos(NULL, m_petpos.x, m_petpos.y, m_petdim.cx, m_petdim.cy, SWP_NOZORDER);
+        SetWindowPos(NULL, (int)m_petpos.X, (int)m_petpos.Y, m_petdim.cx, m_petdim.cy, SWP_NOZORDER);
     }
 
     HCURSOR SetCursor(LPCTSTR cursor)
     {
         return (HCURSOR)::SetClassLongPtr(m_hWnd, GCL_HCURSOR,
-            (LONG_PTR)::LoadCursor(NULL, cursor));
+               (LONG_PTR)::LoadCursor(NULL, cursor));
     }
 
 
@@ -767,7 +816,7 @@ private:
     CSize  m_petdim;            // pet frame dimensions
     CRect  m_screen;            // screen work area
 
-    CPoint m_petpos;            // pet frame origin (left-top)
+    PointF m_petpos;            // pet frame origin (left-top)
     CImage m_petpix;
 
     BYTE m_petalpha;            // alpha transparency. 0 - image is transparent. 

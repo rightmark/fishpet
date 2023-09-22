@@ -10,34 +10,8 @@
 //
 class CMessageLoopEx : public CMessageLoop
 {
-    static const UINT SCREEN_SAVER = 1000; // ms
-
-public:
-    BOOL OnIdle(int /*nIdleCount*/) override
+    virtual BOOL OnIdle(int /*nIdleCount*/)
     {
-        /*
-                if (m_screensaverState)
-                {
-                    ::Sleep(SCREEN_SAVER);
-
-                    if (IsScreenSaverActive()) return TRUE;
-
-                    m_screensaverState = false;
-                }
-                else
-                {
-                    static UINT uptick = 0;
-
-                    if ((UINT)(::GetTickCount() - uptick) > SCREEN_SAVER)
-                    {
-                        uptick = ::GetTickCount();
-
-                        if (IsScreenSaverActive())
-                            m_screensaverState = true;
-                    }
-                }
-        */
-
         int cnt = 0;
         for (int i = 0; i < m_aIdleHandler.GetSize(); i++)
         {
@@ -45,8 +19,6 @@ public:
             if (pIdleHandler && pIdleHandler->OnIdle())
                 ++cnt;
         }
-        //::Sleep(1);
-
         return (cnt > 0);   // continue if nonzero
     }
 
