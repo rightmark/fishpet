@@ -160,13 +160,13 @@ public:
         }
         return TRUE;
     }
-    BOOL CheckHit(POINT& pt)
+    BOOL CheckHit(POINT& pt, WPARAM vk)
     {
         bool inside = CRect(CPoint((int)m_petpos.X, (int)m_petpos.Y), m_petdim).PtInRect(pt);
         if (m_mousehover != inside)
         {
             m_mousehover = inside;
-            inside ? PostMessage(WM_MOUSEHOVER, 0, MAKELPARAM(pt.x, pt.y)) : PostMessage(WM_MOUSELEAVE);
+            inside ? PostMessage(WM_MOUSEHOVER, vk, MAKELPARAM(pt.x, pt.y)) : PostMessage(WM_MOUSELEAVE);
         }
         return inside;
     }
@@ -441,13 +441,13 @@ public:
         }
         else
         {
-            OnClick(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), (USHORT)wParam);
+            OnClick(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), GET_KEYSTATE_WPARAM(wParam));
         }
         return 0;
     }
     LRESULT OnMouseUpR(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/)
     {
-        OnRightClick(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), (USHORT)wParam);
+        OnRightClick(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), GET_KEYSTATE_WPARAM(wParam));
 
         return 0;
     }

@@ -206,35 +206,40 @@ HRESULT CExeModule::Run(int nShowCmd)
 BOOL CExeModule::DoMouseTracking()
 {
     POINT pt; ::GetCursorPos(&pt);
+    WPARAM vk = 0; TestVirtualKeys(vk);
     POSITION pos = m_pets.GetHeadPosition();
     while (pos)
     {
-        if (m_pets.GetNext(pos)->CheckHit(pt)) return TRUE;
+        if (m_pets.GetNext(pos)->CheckHit(pt, vk)) return TRUE;
     }
     return FALSE;
 }
 
 BOOL CExeModule::TestVirtualKeys(WPARAM& wParam)
 {
-    BYTE state[256] = { 0 };
-    if (!::GetKeyboardState(state)) return FALSE;
-    // test keys
-    if (state[VK_LBUTTON] & 0x80) wParam |= MK_LBUTTON;
-    if (state[VK_RBUTTON] & 0x80) wParam |= MK_RBUTTON;
-    if (state[VK_SHIFT]   & 0x80) wParam |= MK_SHIFT;
-    if (state[VK_CONTROL] & 0x80) wParam |= MK_CONTROL;
+#define VK_LRSHIFT VK_SHIFT
 
-    ATLTRACE2(atlTraceUtil, 0, _T("%S keys: 0x%04x\n"), __FUNCTION__, wParam);
+    auto test = [](int vk) -> bool { return (::GetKeyState(vk) & 0x8000); };
+    // test keys
+    if (test(VK_MBUTTON)) wParam |= MK_MBUTTON;
+    if (test(VK_RBUTTON)) wParam |= MK_RBUTTON;
+    if (test(VK_LRSHIFT)) wParam |= MK_SHIFT;
+    if (test(VK_CONTROL)) wParam |= MK_CONTROL;
+
+    ATLTRACE2(atlTraceUtil, 0, _T("%S keys: 0x%04x\n"), __FUNCTION__, GET_KEYSTATE_WPARAM(wParam));
     return TRUE;
 }
 
 BOOL CExeModule::ForwardMessage(UINT message, WPARAM wParam, LPARAM lParam)
 {
     POSITION pos = m_pets.GetHeadPosition();
+    if (!pos) return FALSE;
+
     while (pos)
     {
         m_pets.GetNext(pos)->PostMessage(message, wParam, lParam);
     }
+    return TRUE;
 }
 
 LRESULT CExeModule::LowLevelMouse(int nCode, WPARAM wParam, LPARAM lParam)
@@ -248,9 +253,9 @@ LRESULT CExeModule::LowLevelMouse(int nCode, WPARAM wParam, LPARAM lParam)
         else if (wParam == WM_LBUTTONUP)
         {
             POINT pt; ::GetCursorPos(&pt);
-            WPARAM wp = 0;
-            TestVirtualKeys(wp);
-            ForwardMessage(WM_LBUTTONUP, wp, MAKELPARAM(pt.x, pt.y));
+            WPARAM vk = 0;
+            TestVirtualKeys(vk);
+            ForwardMessage(WM_LBUTTONUP, vk, MAKELPARAM(pt.x, pt.y));
             ATLTRACE2(atlTraceUtil, 0, _T("LLM click: %d, %d\n"), pt.x, pt.y);
         }
     }
