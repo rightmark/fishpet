@@ -10,8 +10,17 @@
 //
 class CMessageLoopEx : public CMessageLoop
 {
+    static const UINT SCREEN_SAVER = 1000; // ms
+
     virtual BOOL OnIdle(int /*nIdleCount*/)
     {
+        if (IsScreenSaverStateChanged())
+        {
+            ProcessScreenSaving();
+            ::Sleep(SCREEN_SAVER); // @TODO: km 20230925 - ??
+            if (m_screensave) return FALSE;
+        }
+
         int cnt = 0;
         for (int i = 0; i < m_aIdleHandler.GetSize(); i++)
         {
@@ -30,9 +39,19 @@ protected:
 
         return !!bRun;
     }
+    bool IsScreenSaverStateChanged()
+    {
+        if (m_screensave != IsScreenSaverActive())
+        {
+            m_screensave = !m_screensave;
+            return true;
+        }
+        return false;
+    }
+    void ProcessScreenSaving();
 
 private:
-    bool m_screensaverState = false;
+    bool m_screensave = false;
 };
 
 class CPet; // forward declaration
@@ -40,7 +59,7 @@ class CPet; // forward declaration
 class CExeModule : public CAtlExeModuleT<CExeModule>
 {
 public:
-    CExeModule() {}
+    CExeModule(): m_hWndParent(NULL) {}
 
     DECLARE_LIBID(LIBID_FishPetLib)
     DECLARE_REGISTRY_APPID_RESOURCEID(IDR_FISHPET, "{9E79717C-01B9-40F6-8101-4FCE4A76C83C}")
@@ -118,6 +137,7 @@ public:
         }
     }
 
+    void ScreenSaverProcessing(bool active);
     void Log(LPCTSTR format, ...);
     bool ParseCommandLine(LPCTSTR pCmdLine, HRESULT* phr) throw();
     HRESULT Run(int nShowCmd = SW_HIDE) throw();
@@ -147,6 +167,8 @@ private:
         Msg(str);
     }
     BOOL DoMouseTracking();
+    BOOL TestVirtualKeys(WPARAM& wParam);
+    BOOL ForwardMessage(UINT message, WPARAM wParam, LPARAM lParam);
     LRESULT LowLevelMouse(int nCode, WPARAM wParam, LPARAM lParam);
     // hooks
     static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);

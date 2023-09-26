@@ -96,6 +96,7 @@ public:
         MESSAGE_HANDLER(WM_MOUSEMOVE, OnMouseMove)
         MESSAGE_HANDLER(WM_MOUSEHOVER, OnMouseHover)
         MESSAGE_HANDLER(WM_MOUSELEAVE, OnMouseLeave)
+        MESSAGE_HANDLER(WM_SYSCOMMAND, OnSysCommand)
 
         CHAIN_MSG_MAP(baseClass)
     END_MSG_MAP()
@@ -110,9 +111,6 @@ public:
 
         m_initialize = false;
         m_mousehover = false;
-        m_screensave = false;
-
-        //Initialize();
 
         DWORD style = WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_POPUP;
         DWORD exstyle = WS_EX_TOPMOST | WS_EX_LAYERED;
@@ -138,40 +136,6 @@ public:
 
     virtual BOOL OnIdle()
     {
-        if (m_screensave)
-        {
-            ::Sleep(SCREEN_SAVER);
-
-            if (!IsScreenSaverActive())
-            {
-                //_Module.Log(_T("** Screen saver stopped"));
-                m_screensave = false;
-                OnScreenSave(m_screensave);
-            }
-            return TRUE;
-        }
-        else
-        {
-            static UINT uptick = 0;
-
-            UINT tick = ::GetTickCount();
-
-            if ((UINT)(tick - uptick) > SCREEN_SAVER)
-            {
-                uptick = tick;
-
-                if (IsScreenSaverActive())
-                {
-                    //_Module.Log(_T("** Screen saver started"));
-                    m_screensave = true;
-                    OnScreenSave(m_screensave);
-                    DrawFrame(); 
-
-                    return TRUE;
-                }
-            }
-        }
-
         if (m_initialize)
         {
             static UINT uptick = 0;
@@ -208,7 +172,7 @@ public:
     }
 
 public:
-// ISupportsErrorInfo
+    // ISupportsErrorInfo
     STDMETHOD(InterfaceSupportsErrorInfo)(REFIID riid)
     {
         static const IID* arr[] = { &IID_IPet };
@@ -221,7 +185,7 @@ public:
         return S_FALSE;
     }
 
-// IPet
+    // IPet
     STDMETHOD(Init)(VARIANT file, VARIANT fnum)
     {
         Initialize();
@@ -305,8 +269,8 @@ public:
     }
     STDMETHOD(put_Alpha)(SHORT a)
     {
-        m_petalpha = (a > 0xff)? 255 
-                   : (a < 0x00)? 0 : (BYTE)a;
+        m_petalpha = (a > 0xff) ? 255
+                   : (a < 0x00) ? 0 : (BYTE)a;
 
         return S_OK;
     }
@@ -338,8 +302,8 @@ public:
     }
     STDMETHOD(put_Timeout)(ULONG val)
     {
-        m_interval = (val > USER_TIMER_MAXIMUM)? USER_TIMER_MAXIMUM
-                   : (val < USER_TIMER_MINIMUM)? USER_TIMER_MINIMUM : val;
+        m_interval = (val > USER_TIMER_MAXIMUM) ? USER_TIMER_MAXIMUM
+                   : (val < USER_TIMER_MINIMUM) ? USER_TIMER_MINIMUM : val;
 
         return S_OK;
     }
@@ -371,7 +335,7 @@ public:
         return S_OK;
     }
 
-// _IPetEvents Methods
+    // _IPetEvents Methods
     STDMETHOD(OnInit)(CRect& rc)
     {
         return Fire_OnInit(rc.left, rc.top, rc.right, rc.bottom);
@@ -412,12 +376,12 @@ public:
     {
         return Fire_OnLeave();
     }
-    STDMETHOD(OnScreenSave)(bool active)
-    {
-        return Fire_OnScreenSave(active);
-    }
+    //     STDMETHOD(OnScreenSave)(bool active)
+    //     {
+    //         return Fire_OnScreenSave(active);
+    //     }
 
-// Message handlers
+    // Message handlers
     LRESULT OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
     {
         ModifyStyle(WS_POPUP, 0);
@@ -489,19 +453,6 @@ public:
     }
     LRESULT OnMouseMove(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/)
     {
-/*
-        if (!m_mousehover)
-        {
-            TRACKMOUSEEVENT tme;
-            tme.cbSize = sizeof(TRACKMOUSEEVENT);
-            tme.dwFlags = TME_HOVER | TME_LEAVE;
-            tme.hwndTrack = m_hWnd;
-            tme.dwHoverTime = HOVER_DEFAULT;
-
-            if (::TrackMouseEvent(&tme)) { m_mousehover = true; }
-        }
-*/
-
         if (m_btnpress)
         {
             int dx = GET_X_LPARAM(lParam) - m_ptDrag.x;
@@ -538,10 +489,16 @@ public:
     }
     LRESULT OnMouseLeave(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
     {
-        //m_mousehover = false; // wait for the next WM_MOUSEMOVE
-
         OnLeave();
 
+        return 0;
+    }
+    LRESULT OnSysCommand(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/)
+    {
+        if (wParam == SC_SCREENSAVE)
+        {
+            Fire_OnScreenSave(lParam);
+        }
         return 0;
     }
 
@@ -620,7 +577,7 @@ private:
 
         m_petdim.SetSize(m_petpix->GetWidth() / m_framenum, m_petpix->GetHeight());
         m_petpos.X = (REAL)-m_petdim.cx;
-        m_petpos.Y = (REAL) m_screen.Width() / 2;
+        m_petpos.Y = (REAL)m_screen.Width() / 2;
 
         return true;
     }
@@ -651,22 +608,6 @@ private:
         }
         return true;
     }
-    bool IsScreenSaverActive()
-    {
-        BOOL bRun = FALSE;
-        ::SystemParametersInfo(SPI_GETSCREENSAVERRUNNING, 0, &bRun, 0);
-
-        return !!bRun;
-    }
-    bool IsScreenSaverStateChanged()
-    {
-        if (m_screensave != IsScreenSaverActive())
-        {
-            m_screensave = !m_screensave;
-            return true;
-        }
-        return false;
-    }
     void DrawFrame()
     {
         CGdiplusBitmap bmp(m_petdim.cx, m_petdim.cy, m_petpix->GetPixelFormat());
@@ -684,9 +625,9 @@ private:
         HBITMAP hbm = memdc.SelectBitmap(bm);
 
         DrawShot(memdc);
-        DrawText(memdc, m_petdim.cx/3 + 20, m_petdim.cy/3);
+        DrawText(memdc, m_petdim.cx / 3 + 20, m_petdim.cy / 3);
 
-        BLENDFUNCTION bf = {0};
+        BLENDFUNCTION bf = { 0 };
         bf.BlendOp = AC_SRC_OVER;
         bf.AlphaFormat = AC_SRC_ALPHA;
         bf.SourceConstantAlpha = m_petalpha;
@@ -787,7 +728,7 @@ private:
     HCURSOR SetCursor(LPCTSTR cursor)
     {
         return (HCURSOR)::SetClassLongPtr(m_hWnd, GCL_HCURSOR,
-               (LONG_PTR)::LoadCursor(NULL, cursor));
+            (LONG_PTR)::LoadCursor(NULL, cursor));
     }
 
 
@@ -797,7 +738,6 @@ private:
     // internal
     bool m_initialize;
     bool m_mousehover;          // cursor is over pet
-    bool m_screensave;
     bool m_btnpress;            // left button down
     bool m_dragging;            // dragging mode
 

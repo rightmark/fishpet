@@ -8,6 +8,12 @@
 
 CExeModule _Module;
 
+void CMessageLoopEx::ProcessScreenSaving()
+{
+    _Module.Log(_T("CPet::screen saver - %i"), (int)m_screensave);
+    _Module.ScreenSaverProcessing(m_screensave);
+}
+
 bool CExeModule::ParseCommandLine(LPCTSTR pCmdLine, HRESULT* phr)
 {
     if (baseClass::ParseCommandLine(pCmdLine, phr)) return true;
@@ -42,6 +48,11 @@ bool CExeModule::ParseCommandLine(LPCTSTR pCmdLine, HRESULT* phr)
     }
 
     return false;
+}
+
+void CExeModule::ScreenSaverProcessing(bool active)
+{
+    ForwardMessage(WM_SYSCOMMAND, SC_SCREENSAVE, active);
 }
 
 void CExeModule::Log(LPCTSTR format, ...)
@@ -164,8 +175,8 @@ HRESULT CExeModule::Run(int nShowCmd)
 
         Log(_T("hidden : %p"), m_hWndParent);
 
-//         m_hook = ::SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, NULL, 0);
-//         ATLTRACE2(atlTraceUtil, 0, _T("hook: %p\n"), m_hook);
+        m_hook = ::SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, NULL, 0);
+        ATLTRACE2(atlTraceUtil, 0, _T("hook: %p\n"), m_hook);
 
         CMessageLoopEx loop;
         AddMessageLoop(&loop);
@@ -180,7 +191,7 @@ HRESULT CExeModule::Run(int nShowCmd)
     }
     Log(_T("**loop break"));
 
-//     if (m_hook) ::UnhookWindowsHookEx(m_hook);
+    if (m_hook) ::UnhookWindowsHookEx(m_hook);
 
     // Call PostMessageLoop if PreMessageLoop returns success.
     if (SUCCEEDED(hr))
@@ -203,11 +214,45 @@ BOOL CExeModule::DoMouseTracking()
     return FALSE;
 }
 
+BOOL CExeModule::TestVirtualKeys(WPARAM& wParam)
+{
+    BYTE state[256] = { 0 };
+    if (!::GetKeyboardState(state)) return FALSE;
+    // test keys
+    if (state[VK_LBUTTON] & 0x80) wParam |= MK_LBUTTON;
+    if (state[VK_RBUTTON] & 0x80) wParam |= MK_RBUTTON;
+    if (state[VK_SHIFT]   & 0x80) wParam |= MK_SHIFT;
+    if (state[VK_CONTROL] & 0x80) wParam |= MK_CONTROL;
+
+    ATLTRACE2(atlTraceUtil, 0, _T("%S keys: 0x%04x\n"), __FUNCTION__, wParam);
+    return TRUE;
+}
+
+BOOL CExeModule::ForwardMessage(UINT message, WPARAM wParam, LPARAM lParam)
+{
+    POSITION pos = m_pets.GetHeadPosition();
+    while (pos)
+    {
+        m_pets.GetNext(pos)->PostMessage(message, wParam, lParam);
+    }
+}
+
 LRESULT CExeModule::LowLevelMouse(int nCode, WPARAM wParam, LPARAM lParam)
 {
-    if (nCode == HC_ACTION && wParam == WM_MOUSEMOVE)
+    if (nCode == HC_ACTION)
     {
-        DoMouseTracking();
+        if (wParam == WM_MOUSEMOVE)
+        {
+            DoMouseTracking();
+        }
+        else if (wParam == WM_LBUTTONUP)
+        {
+            POINT pt; ::GetCursorPos(&pt);
+            WPARAM wp = 0;
+            TestVirtualKeys(wp);
+            ForwardMessage(WM_LBUTTONUP, wp, MAKELPARAM(pt.x, pt.y));
+            ATLTRACE2(atlTraceUtil, 0, _T("LLM click: %d, %d\n"), pt.x, pt.y);
+        }
     }
     return ::CallNextHookEx(NULL, nCode, wParam, lParam);
 
