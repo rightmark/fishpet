@@ -450,7 +450,7 @@ public:
 #endif
 
 #ifdef __GDIPLUS_SUPPORT_
-#define INITIALIZE_GDIPLUS()    CGdiPlusInitialize _;
+#define INITIALIZE_GDIPLUS() CGdiPlusInitialize _
 #pragma push_macro("new")
 #undef new
 #pragma warning(push)
@@ -475,7 +475,7 @@ private:
     Gdiplus::GdiplusStartupInput m_input;
 };
 #else
-#define INITIALIZE_GDIPLUS()
+#define INITIALIZE_GDIPLUS() __noop
 #endif
 
 class CTimeStamp32

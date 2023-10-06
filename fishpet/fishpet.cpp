@@ -159,9 +159,9 @@ HRESULT CExeModule::Run(int nShowCmd)
     // Call RunMessageLoop only if PreMessageLoop returns S_OK.
     while (S_OK == hr)
     {
-        INITIALIZE_GDIPLUS()
+        INITIALIZE_GDIPLUS();
 
-            m_hWndParent = NULL;
+        m_hWndParent = NULL;
         // @TRICKY: km 20081217 - seems the only way to avoid the application
         // toolwindow to be displayed on the taskbar is to create hidden
         // parental window. recommended WS_EX_APPWINDOW extended style removal
